@@ -1,0 +1,22 @@
+# Angular
+
+Klijentska aplikacija rešava tehničke probleme koji ne zavise od domena, isto kao i serverska. Mora da prikaže podatke u HTML dokumentu i da prikaz osveži kada se podaci promene, da reaguje na akcije korisnika, da po adresi u internet čitaču odluči koji ekran prikazuje, da razmenjuje podatke sa serverom i da sastavlja objekte od kojih se sastoji. Ove probleme rešava radni okvir, a naš projekat koristi Angular. Ovde se upoznajemo sa njegovim osnovnim komponentama.
+
+## Mapa direktorijuma
+
+1. [TypeScript](1-typescript.md) - Najmanji deo jezika TypeScript potreban za čitanje projekta: anotacije tipova, nepostojeća vrednost, interfejs, generički tip i klasni modifikatori. Preduslov je za sve naredne lekcije.
+2. [Angular](2-angular.md) - Najmanja aplikacija pročitana datoteku po datoteku: priprema okruženja, struktura radnog prostora, pokretanje i korenska komponenta.
+3. [Komponenta](3-komponenta.md) - Klasa, šablon i stil kao jedna celina, umesto ručne izmene DOM stabla. Interpolacija, vezivanje svojstava i događaja i upotreba komponente u šablonu druge komponente. Lekcija se završava primerom u kom se prikaz ne osvežava.
+4. [Signali](4-signali.md) - Zašto prikaz ne prati promenu običnog polja klase, detekcija promena i signal kao stanje komponente.
+5. [Izvedeni signali](5-izvedeni-signali.md) - Signal čija se vrednost računa iz drugih signala i pravilo o signalu koji čuva niz ili objekat.
+6. [Kontrola toka](6-kontrola-toka.md) - Grananje i petlja u šablonu i alias za vrednost koja može da nedostaje.
+7. [Sastavljanje komponenti](7-sastavljanje-komponenti.md) - Ugnježdavanje komponenti, ulazi i izlazi, podaci putuju naniže, a događaji naviše.
+8. [Rutiranje](8-rutiranje.md) - Tabela ruta, element `router-outlet`, veze za navigaciju, parametar rute kao ulaz komponente i redosled ruta u tabeli.
+9. [Servisi i zavisnosti](9-servisi-i-zavisnosti.md) - Servis kao klasa koju kontejner zavisnosti pravi jednom, ubrizgavanje zavisnosti u komponentu i servis koji drži prijavljenog korisnika.
+10. [Čitanje podataka](10-citanje-podataka.md) - Resurs koji čita podatke sa servera, adresa kao funkcija signala, vrednost pre učitavanja i stanje učitavanja i greške.
+11. [Komande](11-komande.md) - Slanje komande kroz servis, čekanje odgovora, greška koju server prijavi i obrazac stranice sa komandom koja nakon uspeha ponovo učitava svoj resurs.
+12. [Forme](12-forme.md) - Forma izgrađena oko signala, šema sa pravilima validacije, tri oblika zapisa forme, vezivanje elementa za polje i prikaz grešaka.
+13. [Slanje forme](13-slanje-forme.md) - Slanje forme kao komanda, navigacija nakon uspeha iz klase i vraćanje forme koja ostaje na ekranu u početno stanje.
+14. [Stilovi](14-stilovi.md) - Stilovi ograničeni na komponentu, globalna datoteka sa četiri dela, tokeni i postupak izbora mesta za nov stil.
+
+Nakon ovog direktorijuma čitalac zna da napiše komponentu koja prikazuje podatke sa servera, reaguje na korisnika i šalje izmene nazad. Sledeći korak je pitanje kako se takve komponente organizuju unutar jednog modula, čime se bavi direktorijum o arhitekturi modula.

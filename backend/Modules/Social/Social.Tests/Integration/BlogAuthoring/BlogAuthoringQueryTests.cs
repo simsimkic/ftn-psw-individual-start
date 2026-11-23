@@ -1,0 +1,25 @@
+using System.Net.Http.Json;
+using FluentAssertions;
+using Shared.Tests;
+using Social.Application.Blogs;
+using Social.Tests.Integration.Seeds;
+using Xunit;
+
+namespace Social.Tests.Integration.BlogAuthoring;
+
+public class BlogAuthoringQueryTests : BaseIntegrationTest
+{
+    public BlogAuthoringQueryTests(SocialApiFactory factory) : base(factory) { }
+
+    [Fact]
+    public async Task Author_lists_only_their_own_blogs()
+    {
+        var client = Factory.CreateClientFor(WellKnownUsers.Guide, "guide");
+
+        var blogs = await client.GetFromJsonAsync<List<BlogDto>>("/api/social/blogs/mine", JsonOptions);
+
+        blogs.Should().HaveCount(BlogSeed.All.Count(blog => blog.AuthorId == WellKnownUsers.Guide));
+        blogs.Should().OnlyContain(blog => blog.AuthorId == WellKnownUsers.Guide);
+        blogs.Should().NotContain(blog => blog.Id == BlogSeed.SecondGuidesDiary.Id);
+    }
+}

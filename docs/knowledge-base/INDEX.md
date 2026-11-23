@@ -1,0 +1,97 @@
+# Indeks baze znanja
+
+Jedna linija po dokumentu: putanja, opis i preduslovi (dokumenti koje čitalac treba prethodno da poznaje). Direktorijumi su segmenti, a redni brojevi u nazivima daju redosled čitanja. Svaki direktorijum ima `README.md` sa uvodom u segment i mapom svojih lekcija. Dokumenti su lekcije sa namerno pojednostavljenim primerima, osim onih označenih kao normativni.
+
+## Server
+
+- `server/README.md` — Serverska aplikacija podeljena na feature module i tri pitanja kojima se bave segmenti servera. Uvod u server. Preduslovi: nema.
+
+## ASP.NET Core
+
+- `server/1-aspnet/README.md` — Šta radni okvir preuzima od serverske aplikacije i kako se razlikuje od biblioteke. Uvod u segment. Preduslovi: nema.
+- `server/1-aspnet/1-aspnet.md` — Šta ASP.NET Core radi pri obradi zahteva i kako izgleda najmanja aplikacija dovoljna za rad. Preduslovi: nema.
+- `server/1-aspnet/2-kontroleri.md` — Kontroleri i akcije: rutiranje, vezivanje modela, povratna vrednost akcije i middleware. Preduslovi: `server/1-aspnet/1-aspnet.md`.
+- `server/1-aspnet/3-registracija-zavisnosti.md` — Kontejner zavisnosti: kako pravi objekte, životni vekovi, pozadinski servisi i metoda proširenja kojom modul grupiše svoje registracije. Preduslovi: `server/1-aspnet/1-aspnet.md`.
+- `server/1-aspnet/4-asinhrono-programiranje.md` — Zašto server ostaje bez niti pri sinhronom čekanju, `async` i `await` i redosled poziva. Preduslovi: nema.
+
+## Arhitektura modula
+
+- `server/2-arhitektura-modula/README.md` — Čista arhitektura: četiri sloja, njihove odgovornosti i smer zavisnosti. Uvod u segment. Preduslovi: `server/1-aspnet/README.md`.
+
+### Domenski sloj
+
+- `server/2-arhitektura-modula/1-domenski-sloj/README.md` — Uvod u domenski sloj i mapa taktičkih obrazaca. Preduslovi: `server/2-arhitektura-modula/README.md`.
+- `server/2-arhitektura-modula/1-domenski-sloj/1-takticki-obrasci.md` — Gde živi domenska logika i kako su objekti povezani: anemičan i bogat model, povezan graf i graf isečen na celine. Preduslovi: nema.
+- `server/2-arhitektura-modula/1-domenski-sloj/2-vrednosni-objekat.md` — Vrednosni objekat: identitet po vrednostima, nepromenljivost, validnost pri kreiranju. Preduslovi: `1-takticki-obrasci.md`.
+- `server/2-arhitektura-modula/1-domenski-sloj/3-entitet.md` — Entitet: životni ciklus, nepromenljiv identifikator, invarijante i njihovo prijavljivanje izuzetkom. Preduslovi: `2-vrednosni-objekat.md`.
+- `server/2-arhitektura-modula/1-domenski-sloj/4-agregat.md` — Agregat: granica konzistentnosti, koren kao jedina tačka izmene, veza ka drugim agregatima identifikatorom. Preduslovi: `3-entitet.md`.
+- `server/2-arhitektura-modula/1-domenski-sloj/5-domenski-servis.md` — Domenski servis: pravilo koje zahteva uvid u više agregata. Preduslovi: `4-agregat.md`.
+
+### Aplikacioni sloj
+
+- `server/2-arhitektura-modula/2-aplikacioni-sloj/README.md` — Uvod u aplikacioni sloj i mapa lekcija. Preduslovi: `server/2-arhitektura-modula/1-domenski-sloj/README.md`.
+- `server/2-arhitektura-modula/2-aplikacioni-sloj/1-komande-i-upiti.md` — Princip razdvajanja komandi od upita, oblik komandne i upitne klase, komanda nad više agregata. Preduslovi: `server/2-arhitektura-modula/1-domenski-sloj/4-agregat.md`.
+- `server/2-arhitektura-modula/2-aplikacioni-sloj/2-aplikacioni-servis.md` — Struktura aplikacionog sloja u projektu i tri oblika metoda servisa, sa postupkom izbora oblika za nov zahtev. Preduslovi: `1-komande-i-upiti.md`.
+- `server/2-arhitektura-modula/2-aplikacioni-sloj/3-dto-i-mapiranje.md` — DTO strukture na granici sloja, prevođenje ulazne strukture u domenski objekat, popunjavanje izlazne projekcijom ili maperom. Preduslovi: `2-aplikacioni-servis.md`.
+
+### Infrastrukturni sloj
+
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/README.md` — Uvod u infrastrukturni sloj: repozitorijumi, konektorske klase i lokalni tehnički stručnjaci. Preduslovi: `server/2-arhitektura-modula/2-aplikacioni-sloj/README.md`.
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/1-orm.md` — Objektno-relaciono mapiranje i Entity Framework Core naspram ručnog ADO.NET koda. Preduslovi: nema.
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/2-efc-kontekst-i-model.md` — Kontekstna klasa i model mapiranja: konvencije, konfiguracija po agregatu, rehidracija. Preduslovi: `1-orm.md`, `server/2-arhitektura-modula/1-domenski-sloj/4-agregat.md`.
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/3-migracije.md` — Migracije: generisanje iz razlike prema snimku modela, primena pri pokretanju aplikacije, početni podaci. Preduslovi: `2-efc-kontekst-i-model.md`.
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/4-repozitorijumi.md` — Repozitorijum agregata, učitavanje povezanih objekata, praćenje promena i repozitorijum za čitanje. Preduslovi: `2-efc-kontekst-i-model.md`, `server/2-arhitektura-modula/2-aplikacioni-sloj/1-komande-i-upiti.md`.
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/5-jedinica-posla.md` — Jedinica posla: kontekst kao jedinica posla, repozitorijum bez čuvanja, put jedne komande. Preduslovi: `4-repozitorijumi.md`.
+- `server/2-arhitektura-modula/3-infrastrukturni-sloj/6-ostali-infrastrukturni-servisi.md` — Konektorske klase i lokalni tehnički stručnjaci: sposobnost kroz drugi sistem ili kroz biblioteku, oblik interfejsa tehničke sposobnosti. Preduslovi: `5-jedinica-posla.md`, `server/2-arhitektura-modula/1-domenski-sloj/5-domenski-servis.md`.
+
+### API sloj i zaokruženje
+
+- `server/2-arhitektura-modula/4-api-sloj.md` — API sloj: kontroler po grupi slučajeva korišćenja, tri koraka akcije, identifikator korisnika iz zahteva. Preduslovi: `server/2-arhitektura-modula/2-aplikacioni-sloj/README.md`, `server/1-aspnet/2-kontroleri.md`.
+- `server/2-arhitektura-modula/5-čista-arhitektura.md` — Sva četiri sloja zajedno: put jedne komande i jednog upita, odgovornosti po slojevima i pravilo o zavisnostima. Preduslovi: `server/2-arhitektura-modula/3-infrastrukturni-sloj/README.md`, `4-api-sloj.md`.
+
+## Modularni monolit
+
+- `server/3-modularni-monolit/README.md` — Modularni monolit i feature modul: granica modula, glavna aplikacija koja module sastavlja. Uvod u segment. Preduslovi: `server/2-arhitektura-modula/README.md`.
+- `server/3-modularni-monolit/1-kontrakti.md` — Kontrakt kao javna površina modula prema drugim modulima: interfejs i minimalne DTO strukture, implementacija i poziv kroz kontejner zavisnosti. Preduslovi: `README.md`, `server/2-arhitektura-modula/2-aplikacioni-sloj/README.md`.
+- `server/3-modularni-monolit/2-gradivni-elementi.md` — Zajedničko jezgro, gradivni elementi po slojevima, platformski radni okvir i promocija koda u jezgro. Preduslovi: `README.md`.
+- `server/3-modularni-monolit/3-arhitektonski-testovi.md` — Arhitektonski testovi: pravila o zavisnostima kao automatski testovi i tri vrste pravila sa primerom za svaku. Preduslovi: `server/2-arhitektura-modula/5-čista-arhitektura.md`, `2-gradivni-elementi.md`.
+
+## Klijent
+
+- `klijent/README.md` — Klijentska aplikacija podeljena na iste feature module kao server i tri pitanja kojima se bave segmenti klijenta. Uvod u klijent. Preduslovi: nema.
+
+## Angular
+
+- `klijent/1-angular/README.md` — Šta radni okvir preuzima od klijentske aplikacije. Uvod u segment. Preduslovi: nema.
+- `klijent/1-angular/1-typescript.md` — Najmanji deo TypeScript-a potreban za čitanje projekta: anotacije, nepostojeća vrednost, interfejs, generički tip, klasni modifikatori. Preduslovi: nema.
+- `klijent/1-angular/2-angular.md` — Najmanja Angular aplikacija pročitana datoteku po datoteku: priprema okruženja, struktura radnog prostora, pokretanje, korenska komponenta. Preduslovi: `1-typescript.md`.
+- `klijent/1-angular/3-komponenta.md` — Komponenta umesto ručne izmene DOM stabla: klasa, šablon i stil; interpolacija, vezivanje svojstava i događaja; prikaz koji se ne osvežava. Preduslovi: `2-angular.md`.
+- `klijent/1-angular/4-signali.md` — Zašto prikaz ne prati obično polje, detekcija promena, signal kao stanje. Preduslovi: `3-komponenta.md`.
+- `klijent/1-angular/5-izvedeni-signali.md` — Signal izračunat iz drugih signala; nizovi i objekti u signalu. Preduslovi: `4-signali.md`.
+- `klijent/1-angular/6-kontrola-toka.md` — Grananje i petlja u šablonu, alias. Preduslovi: `5-izvedeni-signali.md`.
+- `klijent/1-angular/7-sastavljanje-komponenti.md` — Ugnježdavanje, ulazi i izlazi, podaci naniže i događaji naviše. Preduslovi: `6-kontrola-toka.md`.
+- `klijent/1-angular/8-rutiranje.md` — Tabela ruta, element `router-outlet` i veze, parametar rute kao ulaz, redosled ruta. Preduslovi: `7-sastavljanje-komponenti.md`.
+- `klijent/1-angular/9-servisi-i-zavisnosti.md` — Servis koji kontejner pravi jednom, ubrizgavanje zavisnosti, servis sa prijavljenim korisnikom. Preduslovi: `8-rutiranje.md`, `server/1-aspnet/3-registracija-zavisnosti.md`.
+- `klijent/1-angular/10-citanje-podataka.md` — Resurs, adresa kao funkcija signala, stanja resursa. Preduslovi: `9-servisi-i-zavisnosti.md`.
+- `klijent/1-angular/11-komande.md` — Slanje komande kroz servis, Observable i obećanje, greška servera, obrazac stranice sa komandom i ponovno učitavanje resursa. Preduslovi: `10-citanje-podataka.md`, `server/1-aspnet/2-kontroleri.md`.
+- `klijent/1-angular/12-forme.md` — Forma i šema, tri oblika zapisa, vezivanje elementa za polje, prikaz grešaka. Preduslovi: `11-komande.md`.
+- `klijent/1-angular/13-slanje-forme.md` — Slanje forme kao komanda, navigacija iz klase, vraćanje forme u početno stanje. Preduslovi: `12-forme.md`.
+- `klijent/1-angular/14-stilovi.md` — Stilovi ograničeni na komponentu, globalna datoteka, tokeni, izbor mesta za nov stil. Preduslovi: `3-komponenta.md`.
+
+## Modularni monolit na klijentu
+
+- `klijent/2-modularni-monolit/README.md` — Ista podela na module kao na serveru, tri pravila unutar modula, `core` kao glavna aplikacija, granica koju čuva statička analiza. Uvod u segment. Preduslovi: `klijent/1-angular/README.md`, `server/3-modularni-monolit/README.md`.
+- `klijent/2-modularni-monolit/1-stranice-i-prikazne-komponente.md` — Stranica vodi interakciju, prikazna komponenta prima vrednosti i prijavljuje događaje; grupe slučajeva korišćenja kao raspored modula; izbor strane i grupe za novu komponentu. Preduslovi: `klijent/1-angular/7-sastavljanje-komponenti.md`, `klijent/1-angular/8-rutiranje.md`.
+- `klijent/2-modularni-monolit/2-preslikani-tipovi.md` — DTO struktura servera kao ugovor, tipovi modula preslikani sa servera po utvrđenim pravilima, datoteka se menja samo kada se promeni server. Preduslovi: `1-stranice-i-prikazne-komponente.md`, `klijent/1-angular/11-komande.md`, `server/2-arhitektura-modula/2-aplikacioni-sloj/3-dto-i-mapiranje.md`.
+- `klijent/2-modularni-monolit/3-javna-povrsina.md` — Adrese stranica kao javna površina modula, ulazak modula u aplikaciju kroz `loadChildren`, navigacija ka drugom modulu, podaci se sastavljaju na serveru. Preduslovi: `2-preslikani-tipovi.md`, `klijent/1-angular/8-rutiranje.md`, `server/3-modularni-monolit/1-kontrakti.md`.
+- `klijent/2-modularni-monolit/4-host-i-zajednicko-jezgro.md` — `core` kao host i `shared` kao zajedničko jezgro, presretač, promocija, tabela vlasništva. Preduslovi: `3-javna-povrsina.md`, `server/3-modularni-monolit/2-gradivni-elementi.md`.
+- `klijent/2-modularni-monolit/5-granica-i-staticka-analiza.md` — Pravilo o uvozima kao arhitektonski test klijenta, čitanje prijave, zašto je granica slabija od serverske. Preduslovi: `4-host-i-zajednicko-jezgro.md`, `server/3-modularni-monolit/3-arhitektonski-testovi.md`.
+
+## Testovi
+
+- `testovi/README.md` — Šta ostaje čoveku pri testiranju: odluka šta se testira, pregled tuđih testova, skup testova koji preživljava rast. Uvod u segment. Preduslovi: `server/2-arhitektura-modula/README.md`.
+- `testovi/1-anatomija-jedinicnog-testa.md` — Test okvir, tri dela testa, nezavisnost testova, ime kao rečenica o domenu, parametrizovani test i provere. Preduslovi: `server/2-arhitektura-modula/1-domenski-sloj/4-agregat.md`.
+- `testovi/2-aspekti-kvaliteta-testa.md` — Cilj testiranja, zaštita od regresija, otpornost na refaktorisanje i lažni pozitivi, brzina i lakoća održavanja, ocena kvaliteta testa. Preduslovi: `1-anatomija-jedinicnog-testa.md`.
+- `testovi/3-mapa-testiranja-serverskih-komponenti.md` — Dve dimenzije koda, četiri tipa koda preslikana na komponente modula, hibridne klase koje se refaktorišu pre testiranja. Preduslovi: `2-aspekti-kvaliteta-testa.md`, `server/2-arhitektura-modula/5-čista-arhitektura.md`.
+- `testovi/4-integracioni-testovi.md` — Šta integracioni test izvršava, upravljane i neupravljane zavisnosti, koje scenarije pokriva. Preduslovi: `3-mapa-testiranja-serverskih-komponenti.md`, `server/1-aspnet/2-kontroleri.md`.
+- `testovi/5-platformski-radni-okvir-za-testove.md` — Poslovi koji se ponavljaju u svakom integracionom testu, biblioteka, platforma i modul, roditeljska klasa integracionih testova, početni podaci koji preživljavaju rast, provere koje novi red ne obara. Preduslovi: `4-integracioni-testovi.md`, `server/2-arhitektura-modula/3-infrastrukturni-sloj/5-jedinica-posla.md`, `server/3-modularni-monolit/2-gradivni-elementi.md`.

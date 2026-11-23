@@ -1,0 +1,59 @@
+using System.Text;
+using System.Text.Json.Serialization;
+using Exploration.Api;
+using Exploration.Infrastructure;
+using Host.Api;
+using Identity.Api;
+using Identity.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
+using Social.Api;
+using Social.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
+    .AddIdentityControllers()
+    .AddExplorationControllers()
+    .AddSocialControllers();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwt = builder.Configuration.GetSection("Jwt");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = jwt["Issuer"],
+            ValidAudience = jwt["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!))
+        };
+    });
+builder.Services.AddAuthorization();
+
+builder.Services
+    .AddIdentityModule(builder.Configuration)
+    .AddExplorationModule(builder.Configuration)
+    .AddSocialModule(builder.Configuration);
+
+var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference(options => options.AddPreferredSecuritySchemes("Bearer"));
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+
+public partial class Program;

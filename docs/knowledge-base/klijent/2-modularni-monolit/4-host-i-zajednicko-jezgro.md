@@ -1,0 +1,125 @@
+Na serveru host aplikacija sastavlja module, a zajedničko jezgro drži kod koji koriste svi moduli. Klijent ima ista dva mesta, direktorijume `core` i `shared`. Sadržaj oba direktorijuma smo već delom videli. Na primer servis `Auth` iz prvog i funkciju `serverMessage` iz drugog. Ovde ta dva direktorijuma čitamo do kraja i utvrđujemo ko šta menja.
+
+## Host aplikacija
+
+Na klijentu **host aplikaciju** čine direktorijum `core` i konfiguracija `app.config.ts` iz korena. Host aplikacija pokreće aplikaciju, drži tabelu ruta koja imenuje svaki modul i drži identitet prijavljenog korisnika. Sledeće stablo prikazuje deo projekta van modula:
+
+```
+app/
+  app.config.ts
+  app.ts
+  core/
+    app.routes.ts
+    auth/
+      auth.ts
+      auth-interceptor.ts
+      login/
+      register/
+    home/
+  modules/
+  shared/
+```
+
+U datom stablu treba uočiti sledeće:
+
+- Datoteka `app.config.ts` uključuje delove radnog okvira: rutiranje sa tabelom iz `core/app.routes.ts` i presretača zahteva, kog upoznajemo u narednom odeljku. Korenska komponenta `app.ts` drži zaglavlje i element `router-outlet`.
+- Tabela `core/app.routes.ts` je tabela ruta iz prethodne lekcije.
+- Direktorijum `core/auth` drži servis `Auth`, stranice prijave i registracije i presretač.
+- Direktorijum `core/home` je početna stranica, koja ne pripada nijednom modulu.
+
+## Presretač
+
+**Presretač** (engl. *interceptor*) je funkcija koju radni okvir poziva sa svakim HTTP zahtevom pre nego što ga pošalje i koja zahtev sme da izmeni. Sledeći kod prikazuje presretač koji zahtevu dodaje token prijavljenog korisnika i red konfiguracije koji ga uključuje:
+
+```ts
+export const authInterceptor: HttpInterceptorFn = (request, next) => {
+  const token = inject(Auth).accessToken();
+  if (token === null) {
+    return next(request);
+  }
+  return next(request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
+};
+```
+
+```ts
+provideHttpClient(withInterceptors([authInterceptor])),
+```
+
+U datom kodu treba uočiti sledeće:
+
+- Tip `HttpInterceptorFn` je tip funkcije sa dva parametra: zahtev i funkcija `next`, koja zahtev prosleđuje dalje ka serveru. Presretač mora da pozove `next`, sa istim ili izmenjenim zahtevom, i da vrati njen rezultat.
+- Presretaču se servis ubrizgava pozivom `inject`, kao i komponenti. Izvedeni signal `accessToken` servisa `Auth` vraća vrednost privatnog signala `token`, tj. token koji server izdaje pri prijavi.
+- Bez tokena zahtev prolazi neizmenjen. Sa tokenom presretač pravi kopiju zahteva sa zaglavljem `Authorization` i prosleđuje kopiju.
+- Poziv `provideHttpClient` u `app.config.ts` podešava `HttpClient`, a poziv `withInterceptors` vezuje presretač za svaki zahtev koji šalju resurs i `HttpClient`, iz bilo kog modula.
+- Posledica za kod modula je da nijedna stranica ni servis ne zna za token. Odgovor sa statusnim kodom 401 znači da korisnik nije prijavljen ili da je token istekao, a ne da stranica nije poslala token. Presretač je u nadležnosti platformskog tima.
+
+## Zajedničko jezgro
+
+Na klijentu je **zajedničko jezgro** direktorijum `shared`, koji drži kod koji koriste svi moduli. Sledeće stablo prikazuje ceo direktorijum:
+
+```
+shared/
+  api/
+    page-result.ts
+    problem-details.ts
+  util/
+    server-message.ts
+```
+
+Direktorijum `shared/api` drži preslikane tipove struktura koje server vraća svim modulima. Pored `PageResult`, preslikanog tipa istoimene strukture iz zajedničkog jezgra servera, tu je `ProblemDetails`, preslikani tip tela odgovora sa greškom koje pravi middleware servera:
+
+```ts
+export interface ProblemDetails {
+  type: string | null;
+  title: string | null;
+  status: number | null;
+  detail: string | null;
+  instance: string | null;
+}
+```
+
+Direktorijum `shared/util` drži funkciju `serverMessage`, čiji potpis znamo iz lekcije o komandama. Sledeći kod prikazuje njeno telo:
+
+```ts
+export function serverMessage(error: unknown, fallback: string): string {
+  if (error instanceof HttpErrorResponse) {
+    const problem = error.error as ProblemDetails | null;
+    if (typeof problem?.title === 'string') {
+      return problem.title;
+    }
+  }
+  return fallback;
+}
+```
+
+U datom kodu treba uočiti sledeće:
+
+- Pravilo o izmeni preslikanih tipova važi i za `shared/api`. Struktura `ProblemDetails` se menja samo kada se promeni telo odgovora sa greškom na serveru.
+- Klasa `HttpErrorResponse` je izuzetak koji `HttpClient` baca za odgovor sa statusnim kodom greške. Provera `instanceof` sužava tip `unknown` na taj izuzetak, pa funkcija sme da čita njegovo svojstvo `error`, koje nosi telo odgovora.
+- Telo se tumači kao `ProblemDetails` zapisom `as`, jer prevodilac ne zna šta je server poslao. Kada telo ima `title`, funkcija vraća njega, a u svakom drugom slučaju drugi parametar.
+
+Kod ulazi u `shared` **promocijom**, kao i u zajedničko jezgro na serveru. Kada drugi modul zatraži isto što jedan modul već ima, platformski tim to premešta iz modula u `shared`. Globalna klasa u datoteci `_components.scss` prati isto pravilo, jer je i ona zajednički kod. Pomoćna funkcija koju koristi jedan modul ostaje u tom modulu.
+
+## Vlasništvo
+
+Sledeća tabela sažima ko koji direktorijum menja i šta modul iz njega sme da uveze:
+
+| Direktorijum | Ko menja | Šta modul uvozi |
+|---|---|---|
+| `core` | Platformski tim | Samo `core/auth` |
+| `shared` | Platformski tim | Sve |
+| `styles` | Platformski tim | Ništa, globalne klase se koriste u šablonu |
+| `modules/<naziv>` | Tim tog modula | Ništa iz drugog modula |
+
+## Put jednog zahteva
+
+Povežimo pojmove. Prijavljeni korisnik otvori spisak objavljenih blogova, a stranica `BlogList` modula Social ima resurs sa adresom `/api/social/blogs/published?page=1&pageSize=20`. Dešava se sledeće:
+
+1. Ubrzo nakon što radni okvir napravi stranicu, resurs sastavlja zahtev na tu adresu.
+2. Radni okvir pre slanja poziva presretač iz `core/auth`, koji zahtevu dodaje zaglavlje `Authorization` sa tokenom iz servisa `Auth`.
+3. Server iz tokena prepoznaje korisnika i vraća stranicu blogova. Resurs odgovor upisuje u `value` kao `PageResult<BlogDto>`, gde je `PageResult` iz `shared/api`, a `BlogDto` iz direktorijuma `api` modula Social.
+4. Kada bi server umesto toga vratio odgovor sa greškom, resurs bi je upisao u svoj signal `error`, a šablon bi umesto spiska prikazao unapred upisanu poruku. `BlogList` samo čita, pa dalje od toga ne ide.
+
+Stranice koje pored čitanja šalju i komandu koriste i drugi deo zajedničkog jezgra. U bloku `catch` poruku servera čitaju funkcijom `serverMessage` iz `shared/util`, koja telo odgovora tumači kao `ProblemDetails` iz `shared/api`.
+
+Na celom putu je tim modula Social napisao samo stranicu i njen preslikani tip. Presretač, token i čitanje poruke o grešci dobio je od host aplikacije i zajedničkog jezgra, isto kao i svaki drugi modul.

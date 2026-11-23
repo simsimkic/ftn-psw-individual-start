@@ -1,0 +1,174 @@
+Stranica bloga prikazuje naslov i opis bloga, ispod njih spisak komentara, uz svaki komentar prijavljenog korisnika dugmad za izmenu i brisanje, a na dnu formu za nov komentar. Ceo taj ekran može da stane u jednu komponentu. Sledeći kod prikazuje članove takve klase, gde su tela metoda izostavljena:
+
+```ts
+export class BlogDetail {
+  private readonly http = inject(HttpClient);
+  protected readonly auth = inject(Auth);
+
+  readonly id = input.required<string>();
+
+  protected readonly detail = httpResource<BlogDto>(() => `/api/social/blogs/${this.id()}`);
+  protected readonly error = signal<string | null>(null);
+  protected readonly form = form(signal({ text: '' }), (path) => { ... });
+
+  protected async add(event: Event): Promise<void> { ... }
+  protected async edit(commentId: string, text: string): Promise<void> { ... }
+  protected async remove(commentId: string): Promise<void> { ... }
+}
+```
+
+U datom kodu treba uočiti sledeće:
+
+- Klasa se menja iz tri nepovezana razloga: kada server promeni adresu bloga, kada komentar treba da izgleda drugačije i kada se promeni pravilo za validnost komentara. Poslednja dva razloga nemaju nikakve veze sa blogom, a ipak teraju izmenu datoteke koja prvenstveno opisuje blog.
+- Spisak komentara ne može da se prikaže ni na jednom drugom ekranu. Izgled komentara, zajedno sa dugmadima i formom, zapisan je u šablonu ove klase, između naslova i opisa bloga.
+
+Oba problema imaju isti uzrok. Kroz jednu klasu je implementiran ceo prikaz na ekranu. Nije sporno što komponenta i dovlači podatke i prikazuje ih. Sporno je što je u istoj klasi spisak komentara sa dugmadima i formom koji bi mogao sam za sebe da stoji na bilo kom ekranu. Isti problem na serveru ima kontroler koji sam učitava podatke, proverava pravila i upisuje izmene, i tamo se rešava slojevima. Na klijentu je odgovor jednostavniji, jer nema domenskih pravila koja treba izolovati. Iz stranice izdvajamo delove koji samo prikazuju, a razgovor sa serverom ostaje u samoj stranici. Ovde upoznajemo dve vrste komponenti, raspored direktorijuma modula u grupe slučajeva korišćenja i postupak kojim novoj komponenti biramo mesto.
+
+## Stranica i prikazna komponenta
+
+**Stranica** (engl. *page*) je komponenta koju imenuje tabela ruta i kojoj se ubrizgavaju servisi. **Prikazna komponenta** (engl. *presentational component*) je komponenta koja podatke prima kroz ulaze, akcije korisnika prijavljuje kroz izlaze i kojoj se ne ubrizgava ništa. Stranica zna odakle podaci dolaze i kome se komanda šalje. Prikazna komponenta ne zna ni jedno ni drugo, pa se može koristiti na svakom mestu koje joj popuni ulaze.
+
+Podela ne zabranjuje prikaznoj komponenti da ima stanje. Forma za nov komentar, izabrani red tabele ili otvoren panel su stanje prikaza. Prikazna komponenta takvo stanje drži u signalu, kao i svaka druga. Granica je da joj se ne ubrizgavaju servisi i da se prikazuje u kontekstu drugih komponenti.
+
+Podela nije vidljiva u nazivu datoteke ni u nazivu direktorijuma. Vidi se u kodu: tabela ruta modula imenuje svaku stranicu, stranici se ubrizgava servis, a prikaznoj komponenti ništa. Sledeća tabela sažima razliku:
+
+| | Stranica | Prikazna komponenta |
+|---|---|---|
+| Ko je pravi | Radni okvir, kada se adresa poklopi sa rutom | Šablon roditelja, kroz selektor |
+| Odakle joj podaci | Sama ih dovlači sa servera, kroz resurs | Roditelj ih predaje kroz ulaze |
+| Gde završava klik korisnika | U metodi klase, koja šalje komandu servisu | U izlazu, a šta se dalje dešava odlučuje roditelj |
+| Šta joj se ubrizgava | Servisi koje koristi | Ništa |
+| Primer | `BlogDetail` | `BlogComments` |
+
+## Grupa slučajeva korišćenja
+
+Aplikacioni sloj servera svoje klase deli po grupama slučajeva korišćenja. Klijent tu podelu preuzima kao raspored direktorijuma. **Grupa slučajeva korišćenja** na klijentu je skup stranica koje služe jednom širem cilju korisnika i nosi ime istoimene grupe aplikacionog sloja servera. Modul je ravna lista grupa. Grupa je ravna lista direktorijuma komponenti i najviše jedna datoteka servisa. Sledeće stablo prikazuje modul Social:
+
+```
+modules/social/
+  api/
+  blog-authoring/
+    create-blog/
+    my-blogs/
+    blog-authoring.ts
+  blog-reading/
+    blog-card/
+    blog-comments/
+    blog-detail/
+    blog-list/
+    blog-reading.ts
+  social.routes.ts
+```
+
+U datom stablu treba uočiti sledeće:
+
+- Grupa `blog-authoring` sadrži dve stranice i servis. Grupa `blog-reading` sadrži dve stranice, dve prikazne komponente i servis. Koja je komponenta stranica saznaje se iz tabele ruta `social.routes.ts`, koja imenuje `BlogList`, `MyBlogs`, `CreateBlog` i `BlogDetail`.
+- Server modula Social ima tri grupe, a klijent dve. Komande za komentare na serveru pripadaju grupi `BlogCommenting`, a na klijentu ih nosi servis grupe `blog-reading`, jer ih šalje stranica `BlogDetail`. Klijent grupiše ekrane, a ne operacije, pa obično ima manje grupa od servera.
+- Svaka komponenta ima sopstveni direktorijum sa tri datoteke: klasom, šablonom i stilovima. Prikazna komponenta stoji pored stranica koje je koriste, a ne u zasebnom direktorijumu.
+- Ne postoje direktorijumi `pages`, `components` ni `services`. Kod se grupiše po cilju korisnika, a ne po vrsti datoteke.
+
+## Definisanje nove komponente
+
+Kada pišemo novu komponentu, mesto joj određujemo odgovorom na tri pitanja, ovim redom:
+
+1. Da li je imenuje tabela ruta ili je koristi šablon druge komponente? U prvom slučaju je stranica, u drugom prikazna komponenta.
+2. Kom cilju korisnika služi ekran na kom se pojavljuje? To je njena grupa. Ako grupa ne postoji, pravimo je i dajemo joj ime grupe aplikacionog sloja servera koju ekran poziva.
+3. Ako je prikazna komponenta, da li se pojavljuje samo na jednom ekranu? Ako da, živi u grupi tog ekrana, pored stranice koja je koristi.
+
+## Stranica bloga i komentari
+
+Sledeći kod prikazuje stranicu `BlogDetail`, gde su tela metoda `edit` i `remove` izostavljena jer prate oblik metode `add`:
+
+```ts
+@Component({
+  selector: 'app-blog-detail',
+  imports: [BlogComments, RouterLink],
+  templateUrl: './blog-detail.html',
+  styleUrl: './blog-detail.scss',
+})
+export class BlogDetail {
+  private readonly blogReading = inject(BlogReading);
+  protected readonly auth = inject(Auth);
+
+  readonly id = input.required<string>();
+
+  protected readonly detail = httpResource<BlogDto>(() => `/api/social/blogs/${this.id()}`);
+
+  protected readonly error = signal<string | null>(null);
+
+  protected async add(text: string): Promise<void> {
+    this.error.set(null);
+    try {
+      await this.blogReading.addComment(this.id(), { text });
+      this.detail.reload();
+    } catch (failure) {
+      this.error.set(serverMessage(failure, 'Komentar nije moguće dodati.'));
+    }
+  }
+
+  protected async edit(edit: CommentEdit): Promise<void> { ... }
+
+  protected async remove(commentId: string): Promise<void> { ... }
+}
+```
+
+Sledeći kod prikazuje deo šablona stranice u kom ona koristi prikaznu komponentu:
+
+```html
+@if (detail.value(); as blog) {
+  <h1>{{ blog.title }}</h1>
+  <p>{{ blog.description }}</p>
+
+  <app-blog-comments
+    [comments]="blog.comments"
+    [currentUserId]="auth.user()?.id ?? null"
+    (addComment)="add($event)"
+    (editComment)="edit($event)"
+    (deleteComment)="remove($event)"
+  />
+}
+```
+
+Sledeći kod prikazuje prikaznu komponentu `BlogComments`:
+
+```ts
+export interface CommentEdit {
+  commentId: string;
+  text: string;
+}
+
+@Component({
+  selector: 'app-blog-comments',
+  imports: [FormField],
+  templateUrl: './blog-comments.html',
+  styleUrl: './blog-comments.scss',
+})
+export class BlogComments {
+  readonly comments = input.required<CommentDto[]>();
+  readonly currentUserId = input<string | null>(null);
+
+  readonly addComment = output<string>();
+  readonly editComment = output<CommentEdit>();
+  readonly deleteComment = output<string>();
+
+  protected readonly form = form(signal({ text: '' }), (path) => {
+    required(path.text, { message: 'Komentar ne sme da bude prazan.' });
+  });
+
+  protected submitComment(event: Event): void {
+    event.preventDefault();
+    this.addComment.emit(this.form.text().value());
+    this.form().reset({ text: '' });
+  }
+}
+```
+
+U datom kodu treba uočiti sledeće:
+
+- Tabela ruta `social.routes.ts` imenuje `BlogDetail` uz deo adrese `:id`, a `BlogComments` ne imenuje. Radni okvir pravi stranicu kada se adresa poklopi, a prikaznu komponentu pravi šablon stranice.
+- Stranici se ubrizgavaju servis `BlogReading`, koji nosi komande za komentare, i servis `Auth`, iz kog čita prijavljenog korisnika. Prikaznoj komponenti se ne ubrizgava ništa. Ko je prijavljen saznaje kroz ulaz `currentUserId`, koji stranica popunjava iz servisa `Auth`.
+- Spisak komentara stiže kroz ulaz `comments` iz vrednosti resursa `detail`. Prikazna komponenta ne zna da resurs postoji ni sa koje adrese je spisak stigao.
+- Svaka akcija korisnika nad komentarom je izlaz. Prikazna komponenta prijavljuje tekst novog komentara, identifikator i nov tekst izmenjenog ili identifikator obrisanog, a šta se sa tim dešava odlučuje stranica, koja poziva servis i osvežava resurs.
+- Forma za nov komentar živi u prikaznoj komponenti. To je stanje prikaza, koje se prazni čim je tekst prijavljen kroz izlaz, pa stranica za formu ne zna.
+
+Klasa sa početka lekcije je podeljena na stranicu od tri komande i prikaznu komponentu od tri izlaza. Spisak komentara se sada može iscrtati na svakom mestu koje mu preda niz komentara.

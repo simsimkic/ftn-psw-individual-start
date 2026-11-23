@@ -1,0 +1,31 @@
+<Solution>
+  <Folder Name="/Modules/" />
+  <Folder Name="/Modules/Exploration/">
+    <Project Path="Modules/Exploration/Exploration.Api/Exploration.Api.csproj" />
+    <Project Path="Modules/Exploration/Exploration.Application/Exploration.Application.csproj" />
+    <Project Path="Modules/Exploration/Exploration.Contracts/Exploration.Contracts.csproj" />
+    <Project Path="Modules/Exploration/Exploration.Domain/Exploration.Domain.csproj" />
+    <Project Path="Modules/Exploration/Exploration.Infrastructure/Exploration.Infrastructure.csproj" />
+    <Project Path="Modules/Exploration/Exploration.Tests/Exploration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Identity/">
+    <Project Path="Modules/Identity/Identity.Tests/Identity.Tests.csproj" />
+    <Project Path="Modules/Identity/Identity/Identity.csproj" />
+  </Folder>
+  <Folder Name="/Modules/Social/">
+    <Project Path="Modules/Social/Social.Api/Social.Api.csproj" />
+    <Project Path="Modules/Social/Social.Application/Social.Application.csproj" />
+    <Project Path="Modules/Social/Social.Contracts/Social.Contracts.csproj" />
+    <Project Path="Modules/Social/Social.Domain/Social.Domain.csproj" />
+    <Project Path="Modules/Social/Social.Infrastructure/Social.Infrastructure.csproj" />
+    <Project Path="Modules/Social/Social.Tests/Social.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Shared/Shared.Api/Shared.Api.csproj" />
+    <Project Path="Shared/Shared.Domain/Shared.Domain.csproj" />
+    <Project Path="Shared/Shared.Infrastructure/Shared.Infrastructure.csproj" />
+    <Project Path="Shared/Shared.Tests/Shared.Tests.csproj" />
+  </Folder>
+  <Project Path="Host.Api/Host.Api.csproj" />
+  <Project Path="Host.Tests/Host.Tests.csproj" />
+</Solution>

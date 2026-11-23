@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa znanja</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js"></script>
+<style>
+:root{
+  --bg:#f6f5f2;
+  --surface-0:#ffffff;
+  --surface-1:#faf9f7;
+  --surface-2:#f1efeb;
+  --border:#e3e0d9;
+  --border-strong:#cfcbc1;
+  --border-stronger:#b0aa9c;
+  --text-primary:#26241f;
+  --text-secondary:#6f6a5f;
+  --accent:#2f6f6a;
+  --accent-soft:#e2eeed;
+  --accent-border:#8fbab6;
+  --code-bg:#f0efec;
+  --shadow:0 1px 3px rgba(38,36,31,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1c1b19;
+    --surface-0:#242320;
+    --surface-1:#2a2926;
+    --surface-2:#31302c;
+    --border:#3a3833;
+    --border-strong:#4a4740;
+    --border-stronger:#6a655a;
+    --text-primary:#e8e6e1;
+    --text-secondary:#a39d90;
+    --accent:#7fc4be;
+    --accent-soft:#243835;
+    --accent-border:#3f6b66;
+    --code-bg:#2d2c28;
+    --shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--bg);
+  color:var(--text-primary);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+}
+.app{display:flex;height:100vh}
+.map-pane{
+  flex:0 0 46%;
+  max-width:760px;
+  overflow-y:auto;
+  padding:24px 20px 40px 24px;
+}
+.reader-pane{
+  flex:1;
+  overflow-y:auto;
+  border-left:1px solid var(--border);
+  background:var(--surface-0);
+}
+@media (max-width: 980px){
+  .app{flex-direction:column;height:auto}
+  .map-pane{flex:none;max-width:none;width:100%}
+  .reader-pane{border-left:none;border-top:1px solid var(--border)}
+}
+
+/* ---------- map ---------- */
+h1{font-size:18px;font-weight:600;margin:0 0 16px;letter-spacing:-.01em}
+.chip,.tag,.pr{
+  display:inline-block;font-size:12px;margin:3px 4px 3px 0;line-height:1.4;
+}
+.chip{
+  padding:4px 10px;border:1px solid var(--border-strong);border-radius:6px;
+  background:var(--surface-2);color:var(--text-primary);
+}
+.tag{
+  padding:3px 10px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);border:1px solid transparent;
+}
+.pr{
+  padding:3px 10px;border:1px dashed var(--accent-border);border-radius:6px;
+  color:var(--accent);font-style:italic;
+}
+.title-node.node{
+  display:inline-block;border:1px solid var(--border-strong);border-radius:6px;
+  background:var(--surface-2);padding:3px 10px;
+}
+.node{cursor:pointer;transition:box-shadow .12s,border-color .12s,background .12s}
+.node:hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.tag.node:hover{border-color:var(--accent)}
+.node.active{
+  background:var(--accent);color:#fff;border-color:var(--accent);font-style:normal;
+}
+.node.active span{color:inherit;opacity:.85}
+@media (prefers-color-scheme: dark){
+  .node.active{color:#1c1b19}
+}
+.tier{margin:0 0 10px}
+.tier-gap{margin-top:32px}
+.tier-title.node{font-size:15px;font-weight:600}
+.frame{
+  border:1.5px dashed var(--border-stronger);border-radius:16px;padding:12px;
+  margin-top:12px;
+}
+.frame .frame-title{margin:0 4px}
+.frame-title{display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px;gap:8px}
+.box-title{font-size:14px;font-weight:500;color:var(--text-primary)}
+.box-sub{font-weight:400;color:var(--text-secondary);font-size:12px}
+.monolith{
+  border:1px solid var(--border-strong);border-radius:12px;background:var(--surface-0);
+  padding:12px;box-shadow:var(--shadow);
+}
+.top-row{display:flex;gap:8px}
+.top-box{
+  flex:1;border:1px solid var(--border-strong);border-radius:8px;
+  background:var(--surface-1);padding:10px 12px;
+}
+.top-box .box-sub{display:block;margin-bottom:6px}
+.module{
+  position:relative;border:1px solid var(--border-strong);border-radius:12px;
+  background:var(--surface-2);padding:12px;margin-right:10px;margin-bottom:10px;
+}
+.module-shadow{
+  position:absolute;top:10px;right:-10px;bottom:-10px;left:10px;
+  border:1px solid var(--border);border-radius:12px;z-index:-1;background:var(--surface-1);
+}
+.layer{
+  display:flex;gap:12px;align-items:flex-start;padding:10px 12px;
+  border:1px solid var(--border-strong);border-radius:8px;
+  background:var(--surface-1);margin-bottom:8px;
+}
+.layer:last-child{margin-bottom:0}
+.lname{
+  flex:0 0 152px;margin:-4px -6px;padding:4px 6px;border-radius:6px;
+  font-size:13.5px;font-weight:500;line-height:1.3;
+}
+.lname span{display:block;font-size:12px;font-weight:400;color:var(--text-secondary)}
+.lbody{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start}
+.legend{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+  margin-top:12px;font-size:12px;color:var(--text-secondary);
+}
+.legend .chip,.legend .tag,.legend .pr{margin:0 4px 0 0;padding:2px 8px;cursor:default}
+.group{
+  border:1px solid var(--border-strong);border-radius:10px;
+  background:var(--surface-2);padding:10px;margin-bottom:8px;
+}
+.group .lname{flex-basis:141px}
+
+/* ---------- reader ---------- */
+.reader-header{
+  position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;
+  padding:10px 28px;background:var(--surface-0);border-bottom:1px solid var(--border);
+  min-height:44px;
+}
+.reader-title{font-size:13px;font-weight:500;color:var(--text-secondary);flex:1;
+  text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back-btn{
+  display:none;border:1px solid var(--border-strong);background:var(--surface-1);
+  color:var(--text-primary);font:inherit;font-size:12.5px;border-radius:6px;
+  padding:4px 10px;cursor:pointer;white-space:nowrap;max-width:45%;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
+.back-btn.visible{display:block}
+.reader-content{
+  position:relative;max-width:720px;margin:0 auto;padding:28px 28px 80px;
+  font-size:15px;line-height:1.7;
+}
+.reader-placeholder{color:var(--text-secondary);text-align:center;padding-top:12vh;font-size:14px}
+.reader-content h1{font-size:26px;line-height:1.25;margin:0 0 16px;font-weight:600}
+.reader-content h2{font-size:20px;margin:36px 0 12px;font-weight:600;letter-spacing:-.01em}
+.reader-content h3{font-size:16.5px;margin:28px 0 10px;font-weight:600}
+.reader-content p{margin:0 0 14px}
+.reader-content ul,.reader-content ol{margin:0 0 14px;padding-left:26px}
+.reader-content li{margin-bottom:5px}
+.reader-content a{color:var(--accent)}
+.reader-content blockquote{
+  margin:0 0 18px;padding:10px 16px;border-left:3px solid var(--accent-border);
+  background:var(--surface-1);border-radius:0 8px 8px 0;color:var(--text-secondary);
+}
+.reader-content blockquote p{margin:0}
+.reader-content code{
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.86em;
+  background:var(--code-bg);padding:1.5px 5px;border-radius:4px;
+}
+.reader-content pre{
+  background:var(--code-bg);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;overflow-x:auto;margin:0 0 16px;
+}
+.reader-content pre code{background:none;padding:0;font-size:13px;line-height:1.6}
+.reader-content img{max-width:100%;border-radius:8px}
+.reader-content table{border-collapse:collapse;margin:0 0 16px;display:block;overflow-x:auto}
+.reader-content th,.reader-content td{border:1px solid var(--border-strong);padding:6px 12px;text-align:left}
+.reader-content th{background:var(--surface-1)}
+.reader-content hr{border:none;border-top:1px solid var(--border);margin:24px 0}
+.reader-content details{
+  border:1px solid var(--border-strong);border-radius:10px;padding:10px 14px;margin:0 0 16px;
+  background:var(--surface-1);
+}
+.reader-content details summary{cursor:pointer;color:var(--accent)}
+.reader-content details[open] summary{margin-bottom:10px}
+.reader-error{color:var(--text-secondary);text-align:center;padding-top:12vh}
+.hljs{background:transparent}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="map-pane">
+<h1>Mapa znanja</h1>
+<div class="tier"><span class="title-node tier-title" data-note="server">Server</span></div>
+<div class="monolith">
+    <div class="frame-title" style="margin:0 2px 10px">
+      <span class="box-title title-node" data-note="modularni-monolit">Modularni monolit</span>
+      <span class="tag" data-note="aspnet-segment">ASP.NET Core radni okvir</span>
+    </div>
+    <div class="module">
+      <div class="module-shadow"></div>
+      <div class="frame-title" style="margin:0 2px 10px">
+        <span class="box-title title-node" data-note="feature-modul">Feature modul <span class="box-sub">jedan od više</span></span>
+        <span class="pr" data-note="cista-arhitektura">prati čistu arhitekturu</span>
+      </div>
+      <div class="layer"><div class="lname" data-note="api-sloj">API sloj<span>Api, vidljiv klijentskoj aplikaciji</span></div><div class="lbody"><span class="tag" data-note="aspnet">ASP.NET Core</span><span class="chip" data-note="kontroleri">Kontroleri</span></div></div>
+      <div class="layer"><div class="lname" data-note="kontrakti">Kontrakt<span>Contracts, vidljiv drugim modulima</span></div><div class="lbody"><span class="chip" data-note="kontrakti">Interfejs i DTO strukture za druge module</span></div></div>
+      <div class="layer"><div class="lname" data-note="aplikacioni-sloj">Aplikacioni sloj<span>Application</span></div><div class="lbody"><span class="pr" data-note="komande-i-upiti">komande i upiti</span><span class="chip" data-note="aplikacioni-servis">Aplikacioni servisi</span><span class="chip" data-note="dto-i-mapiranje">DTO strukture i maper</span><span class="pr" data-note="asinhrono-programiranje">asinhrono programiranje</span></div></div>
+      <div class="layer"><div class="lname" data-note="domenski-sloj">Domenski sloj<span>Domain</span></div><div class="lbody"><span class="pr" data-note="takticki-obrasci">taktički obrasci DDD</span><span class="chip" data-note="vrednosni-objekat">Vrednosni objekti</span><span class="chip" data-note="entitet">Entiteti</span><span class="chip" data-note="agregat">Agregati</span><span class="chip" data-note="domenski-servis">Domenski servisi</span></div></div>
+      <div class="layer"><div class="lname" data-note="infrastrukturni-sloj">Infrastrukturni sloj<span>Infrastructure</span></div><div class="lbody"><span class="pr" data-note="orm">ORM</span><span class="tag" data-note="efc-kontekst-i-model">Entity Framework Core</span><span class="chip" data-note="migracije">Migracije</span><span class="chip" data-note="repozitorijumi">Repozitorijumi</span><span class="chip" data-note="jedinica-posla">Jedinica posla</span><span class="chip" data-note="ostali-infrastrukturni-servisi">Konektorske klase</span><span class="chip" data-note="ostali-infrastrukturni-servisi">Lokalni tehnički stručnjaci</span></div></div>
+      <div class="layer"><div class="lname" data-note="testovi">Sloj testova<span>Tests, Unit i Integration</span></div><div class="lbody"><span class="tag" data-note="xunit">xUnit</span><span class="chip" data-note="jedinicni-testovi">Jedinični testovi</span><span class="chip" data-note="integracioni-testovi">Integracioni testovi</span><span class="pr" data-note="kvalitet-testa">kvalitet testa</span><span class="pr" data-note="mapa-testiranja">šta testiramo kojim testom</span></div></div>
+    </div>
+    <div class="top-row">
+      <div class="top-box">
+        <div class="box-title title-node" data-note="glavna-aplikacija">Glavna aplikacija</div>
+        <span class="box-sub">Host, sastavlja module</span>
+        <span class="tag" data-note="registracija-zavisnosti">Kontejner zavisnosti</span><span class="chip" data-note="middleware">Middleware</span>
+      </div>
+      <div class="top-box">
+        <div class="box-title title-node" data-note="gradivni-elementi">Gradivni elementi</div>
+        <span class="box-sub">Shared, zajedničko jezgro</span>
+        <span class="chip" data-note="radni-okvir-za-testove">Radni okvir za testove</span>
+      </div>
+    </div>
+</div>
+<div class="frame">
+  <div class="frame-title">
+    <span><span class="box-title title-node" data-note="arhitektonski-testovi">Arhitektonski testovi</span> <span class="box-sub">čuvaju granice slojeva i modula</span></span>
+  </div>
+</div>
+<div class="tier tier-gap"><span class="title-node tier-title" data-note="klijent">Klijent</span></div>
+<div class="monolith">
+    <div class="frame-title" style="margin:0 2px 10px">
+      <span class="box-title title-node" data-note="klijent-modularni-monolit">Modularni monolit</span>
+      <span class="tag" data-note="angular-segment">Angular radni okvir</span>
+    </div>
+    <div class="module">
+      <div class="module-shadow"></div>
+      <div class="frame-title" style="margin:0 2px 10px">
+        <span class="box-title title-node" data-note="klijent-arhitektura-modula">Feature modul <span class="box-sub">jedan od više</span></span>
+      </div>
+      <div class="layer"><div class="lname" data-note="javna-povrsina">Rute modula<span>routes, vidljive drugim modulima</span></div><div class="lbody"><span class="chip" data-note="rutiranje">Tabela ruta modula</span></div></div>
+      <div class="group">
+        <div class="frame-title" style="margin:0 2px 8px">
+          <span class="box-title title-node" data-note="stranice-i-prikazne-komponente">Grupa slučajeva korišćenja <span class="box-sub">jedna od više</span></span>
+        </div>
+        <div class="layer"><div class="lname" data-note="stranica-i-prikazna-komponenta">Stranice<span>vode interakciju</span></div><div class="lbody"><span class="chip" data-note="citanje-podataka">Resurs</span><span class="chip" data-note="forme">Forme</span><span class="chip" data-note="slanje-forme">Slanje forme</span></div></div>
+        <div class="layer"><div class="lname" data-note="stranica-i-prikazna-komponenta">Prikazne komponente<span>primaju ulaze, prijavljuju izlaze</span></div><div class="lbody"><span class="chip" data-note="komponenta">Komponenta</span><span class="chip" data-note="signali">Signali</span><span class="chip" data-note="izvedeni-signali">Izvedeni signali</span><span class="chip" data-note="kontrola-toka">Kontrola toka</span><span class="chip" data-note="sastavljanje-komponenti">Ulazi i izlazi</span><span class="chip" data-note="stilovi-komponente">Stilovi komponente</span></div></div>
+        <div class="layer"><div class="lname" data-note="komande">Servis grupe<span>komande grupe</span></div><div class="lbody"><span class="chip" data-note="servisi-i-zavisnosti">Servisi i zavisnosti</span><span class="chip" data-note="komande">Komande</span></div></div>
+      </div>
+      <div class="layer"><div class="lname" data-note="preslikani-tipovi">Preslikani tipovi<span>api, ugovor sa serverom</span></div><div class="lbody"><span class="tag" data-note="typescript">TypeScript</span><span class="chip" data-note="preslikani-tipovi">DTO strukture servera</span></div></div>
+    </div>
+    <div class="top-row">
+      <div class="top-box">
+        <div class="box-title title-node" data-note="host-aplikacija">Glavna aplikacija</div>
+        <span class="box-sub">core, sastavlja module</span>
+        <span class="tag" data-note="angular">Pokretanje aplikacije</span><span class="chip" data-note="ucitavanje-modula">Učitavanje modula</span><span class="chip" data-note="presretac">Presretač</span><span class="chip" data-note="prijavljeni-korisnik">Prijavljeni korisnik</span>
+      </div>
+      <div class="top-box">
+        <div class="box-title title-node" data-note="zajednicko-jezgro">Zajedničko jezgro</div>
+        <span class="box-sub">shared</span>
+        <span class="chip" data-note="globalni-stilovi">Globalni stilovi i tokeni</span>
+      </div>
+    </div>
+</div>
+<div class="frame">
+  <div class="frame-title">
+    <span><span class="box-title title-node" data-note="staticka-analiza">Statička analiza</span> <span class="box-sub">čuva granice modula</span></span>
+  </div>
+</div>
+<div class="legend">
+  <span class="chip">koncept</span>
+  <span class="tag">tehnologija</span>
+  <span class="pr">princip</span>
+</div>
+</div>
+
+<div class="reader-pane" id="readerPane">
+  <div class="reader-header">
+    <button class="back-btn" id="backBtn"></button>
+    <div class="reader-title" id="readerTitle"></div>
+    <button class="back-btn" id="fwdBtn"></button>
+  </div>
+  <div class="reader-content" id="readerContent">
+    <div class="reader-placeholder">Izaberite čvor na mapi da pročitate belešku.</div>
+  </div>
+</div>
+
+</div>
+<script>
+const RAW_BASE = 'https://raw.githubusercontent.com/Luburic/ftn-psw-start/main/docs/knowledge-base/';
+const BLOB_BASE = 'https://github.com/Luburic/ftn-psw-start/blob/main/docs/knowledge-base/';
+
+const NOTES = {
+  'server':                  { title: 'Server',                           path: 'server/README.md' },
+  'aspnet-segment':         { title: 'ASP.NET Core',                     path: 'server/1-aspnet/README.md' },
+  'aspnet':                  { title: 'ASP.NET Core',                     path: 'server/1-aspnet/1-aspnet.md' },
+  'kontroleri':              { title: 'Kontroleri',                       path: 'server/1-aspnet/2-kontroleri.md' },
+  'middleware':              { title: 'Middleware',                       path: 'server/1-aspnet/2-kontroleri.md', section: 'middleware' },
+  'registracija-zavisnosti': { title: 'Registracija zavisnosti',          path: 'server/1-aspnet/3-registracija-zavisnosti.md' },
+  'asinhrono-programiranje': { title: 'Asinhrono programiranje',          path: 'server/1-aspnet/4-asinhrono-programiranje.md' },
+  'cista-arhitektura':       { title: 'Čista arhitektura',                path: 'server/2-arhitektura-modula/5-čista-arhitektura.md' },
+  'domenski-sloj':           { title: 'Domenski sloj',                    path: 'server/2-arhitektura-modula/1-domenski-sloj/README.md' },
+  'takticki-obrasci':        { title: 'Taktički obrasci',                 path: 'server/2-arhitektura-modula/1-domenski-sloj/1-takticki-obrasci.md' },
+  'vrednosni-objekat':       { title: 'Vrednosni objekat',                path: 'server/2-arhitektura-modula/1-domenski-sloj/2-vrednosni-objekat.md' },
+  'entitet':                 { title: 'Entitet',                          path: 'server/2-arhitektura-modula/1-domenski-sloj/3-entitet.md' },
+  'agregat':                 { title: 'Agregat',                          path: 'server/2-arhitektura-modula/1-domenski-sloj/4-agregat.md' },
+  'domenski-servis':         { title: 'Domenski servis',                  path: 'server/2-arhitektura-modula/1-domenski-sloj/5-domenski-servis.md' },
+  'aplikacioni-sloj':        { title: 'Aplikacioni sloj',                 path: 'server/2-arhitektura-modula/2-aplikacioni-sloj/README.md' },
+  'komande-i-upiti':         { title: 'Komande i upiti',                  path: 'server/2-arhitektura-modula/2-aplikacioni-sloj/1-komande-i-upiti.md' },
+  'aplikacioni-servis':      { title: 'Aplikacioni servis',               path: 'server/2-arhitektura-modula/2-aplikacioni-sloj/2-aplikacioni-servis.md' },
+  'dto-i-mapiranje':         { title: 'DTO strukture i mapiranje',        path: 'server/2-arhitektura-modula/2-aplikacioni-sloj/3-dto-i-mapiranje.md' },
+  'infrastrukturni-sloj':    { title: 'Infrastrukturni sloj',             path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/README.md' },
+  'orm':                     { title: 'Objektno-relaciono mapiranje',     path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/1-orm.md' },
+  'efc-kontekst-i-model':    { title: 'Kontekst i model mapiranja',       path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/2-efc-kontekst-i-model.md' },
+  'migracije':               { title: 'Migracije',                        path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/3-migracije.md' },
+  'repozitorijumi':          { title: 'Repozitorijumi',                   path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/4-repozitorijumi.md' },
+  'jedinica-posla':          { title: 'Jedinica posla',                   path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/5-jedinica-posla.md' },
+  'ostali-infrastrukturni-servisi': { title: 'Ostali infrastrukturni servisi', path: 'server/2-arhitektura-modula/3-infrastrukturni-sloj/6-ostali-infrastrukturni-servisi.md' },
+  'api-sloj':                { title: 'API sloj',                         path: 'server/2-arhitektura-modula/4-api-sloj.md' },
+  'modularni-monolit':       { title: 'Modularni monolit',                path: 'server/3-modularni-monolit/README.md' },
+  'feature-modul':           { title: 'Feature modul',                    path: 'server/3-modularni-monolit/README.md', section: 'feature-modul' },
+  'glavna-aplikacija':       { title: 'Sastavljanje aplikacije',          path: 'server/3-modularni-monolit/README.md', section: 'sastavljanje-aplikacije' },
+  'kontrakti':               { title: 'Kontrakti',                        path: 'server/3-modularni-monolit/1-kontrakti.md' },
+  'gradivni-elementi':       { title: 'Gradivni elementi',                path: 'server/3-modularni-monolit/2-gradivni-elementi.md' },
+  'arhitektonski-testovi':   { title: 'Arhitektonski testovi',            path: 'server/3-modularni-monolit/3-arhitektonski-testovi.md' },
+  'testovi':                 { title: 'Testovi',                          path: 'testovi/README.md' },
+  'xunit':                   { title: 'Test okvir',                       path: 'testovi/1-anatomija-jedinicnog-testa.md', section: 'test-okvir-i-test-metoda' },
+  'jedinicni-testovi':       { title: 'Anatomija jediničnog testa',       path: 'testovi/1-anatomija-jedinicnog-testa.md' },
+  'kvalitet-testa':          { title: 'Aspekti kvaliteta testa',          path: 'testovi/2-aspekti-kvaliteta-testa.md' },
+  'mapa-testiranja':         { title: 'Mapa testiranja serverskih komponenti', path: 'testovi/3-mapa-testiranja-serverskih-komponenti.md' },
+  'integracioni-testovi':    { title: 'Integracioni testovi',             path: 'testovi/4-integracioni-testovi.md' },
+  'radni-okvir-za-testove':  { title: 'Platformski radni okvir za testove', path: 'testovi/5-platformski-radni-okvir-za-testove.md' },
+  'klijent':                 { title: 'Klijent',                          path: 'klijent/README.md' },
+  'angular-segment':         { title: 'Angular',                          path: 'klijent/1-angular/README.md' },
+  'typescript':              { title: 'TypeScript',                       path: 'klijent/1-angular/1-typescript.md' },
+  'angular':                 { title: 'Angular',                          path: 'klijent/1-angular/2-angular.md' },
+  'komponenta':              { title: 'Komponenta',                       path: 'klijent/1-angular/3-komponenta.md' },
+  'signali':                 { title: 'Signali',                          path: 'klijent/1-angular/4-signali.md' },
+  'izvedeni-signali':        { title: 'Izvedeni signali',                 path: 'klijent/1-angular/5-izvedeni-signali.md' },
+  'kontrola-toka':           { title: 'Kontrola toka',                    path: 'klijent/1-angular/6-kontrola-toka.md' },
+  'sastavljanje-komponenti': { title: 'Sastavljanje komponenti',          path: 'klijent/1-angular/7-sastavljanje-komponenti.md' },
+  'rutiranje':               { title: 'Rutiranje',                        path: 'klijent/1-angular/8-rutiranje.md' },
+  'servisi-i-zavisnosti':    { title: 'Servisi i zavisnosti',             path: 'klijent/1-angular/9-servisi-i-zavisnosti.md' },
+  'prijavljeni-korisnik':    { title: 'Prijavljeni korisnik',             path: 'klijent/1-angular/9-servisi-i-zavisnosti.md', section: 'zaglavlje-sa-korisnikom' },
+  'citanje-podataka':        { title: 'Čitanje podataka',                 path: 'klijent/1-angular/10-citanje-podataka.md' },
+  'komande':                 { title: 'Komande',                          path: 'klijent/1-angular/11-komande.md' },
+  'forme':                   { title: 'Forme',                            path: 'klijent/1-angular/12-forme.md' },
+  'slanje-forme':            { title: 'Slanje forme',                     path: 'klijent/1-angular/13-slanje-forme.md' },
+  'stilovi-komponente':      { title: 'Stilovi komponente',               path: 'klijent/1-angular/14-stilovi.md', section: 'stilovi-komponente' },
+  'globalni-stilovi':        { title: 'Globalni stilovi i tokeni',        path: 'klijent/1-angular/14-stilovi.md', section: 'globalni-stilovi' },
+  'klijent-arhitektura-modula': { title: 'Arhitektura modula na klijentu', path: 'klijent/2-modularni-monolit/README.md' },
+  'stranice-i-prikazne-komponente': { title: 'Stranice i prikazne komponente', path: 'klijent/2-modularni-monolit/1-stranice-i-prikazne-komponente.md' },
+  'stranica-i-prikazna-komponenta': { title: 'Stranica i prikazna komponenta', path: 'klijent/2-modularni-monolit/1-stranice-i-prikazne-komponente.md', section: 'stranica-i-prikazna-komponenta' },
+  'preslikani-tipovi':       { title: 'Preslikani tipovi',                path: 'klijent/2-modularni-monolit/2-preslikani-tipovi.md' },
+  'klijent-modularni-monolit': { title: 'Modularni monolit na klijentu',  path: 'klijent/2-modularni-monolit/README.md' },
+  'javna-povrsina':          { title: 'Javna površina',                   path: 'klijent/2-modularni-monolit/3-javna-povrsina.md' },
+  'ucitavanje-modula':       { title: 'Ulazak modula u aplikaciju',       path: 'klijent/2-modularni-monolit/3-javna-povrsina.md', section: 'ulazak-modula-u-aplikaciju' },
+  'host-aplikacija':         { title: 'Host aplikacija',                  path: 'klijent/2-modularni-monolit/4-host-i-zajednicko-jezgro.md', section: 'host-aplikacija' },
+  'presretac':               { title: 'Presretač',                        path: 'klijent/2-modularni-monolit/4-host-i-zajednicko-jezgro.md', section: 'presretac' },
+  'zajednicko-jezgro':       { title: 'Zajedničko jezgro',                path: 'klijent/2-modularni-monolit/4-host-i-zajednicko-jezgro.md', section: 'zajednicko-jezgro' },
+  'staticka-analiza':        { title: 'Granica i statička analiza',       path: 'klijent/2-modularni-monolit/5-granica-i-staticka-analiza.md' }
+};
+
+const readerPane = document.getElementById('readerPane');
+const readerContent = document.getElementById('readerContent');
+const readerTitle = document.getElementById('readerTitle');
+const backBtn = document.getElementById('backBtn');
+const fwdBtn = document.getElementById('fwdBtn');
+
+const mdCache = new Map();
+const scrollMemory = new Map();
+const historyStack = [];
+const forwardStack = [];
+let currentKey = null;
+
+function slugify(text) {
+  return text.toLowerCase()
+    .replace(/š/g, 's').replace(/đ/g, 'dj').replace(/č/g, 'c').replace(/ć/g, 'c').replace(/ž/g, 'z')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function noteKeyFor(path, section, linkText) {
+  const existing = Object.keys(NOTES).find(k =>
+    NOTES[k].path === path && (NOTES[k].section || '') === (section || ''));
+  if (existing) return existing;
+  const key = section ? path + '#' + section : path;
+  if (!NOTES[key]) {
+    const fileName = path.slice(path.lastIndexOf('/') + 1).replace(/\.md$/, '');
+    NOTES[key] = { title: linkText.trim() || fileName, path, section: section || undefined };
+  }
+  return key;
+}
+
+function markActive(key) {
+  document.querySelectorAll('[data-note]').forEach(el =>
+    el.classList.toggle('active', el.dataset.note === key));
+}
+
+function updateNavButtons() {
+  const prev = historyStack[historyStack.length - 1];
+  if (prev && NOTES[prev]) {
+    backBtn.textContent = '← ' + NOTES[prev].title;
+    backBtn.classList.add('visible');
+  } else {
+    backBtn.classList.remove('visible');
+  }
+  const next = forwardStack[forwardStack.length - 1];
+  if (next && NOTES[next]) {
+    fwdBtn.textContent = NOTES[next].title + ' →';
+    fwdBtn.classList.add('visible');
+  } else {
+    fwdBtn.classList.remove('visible');
+  }
+}
+
+async function fetchNote(path) {
+  if (mdCache.has(path)) return mdCache.get(path);
+  const res = await fetch(RAW_BASE + path);
+  if (!res.ok) throw new Error(res.status);
+  const text = await res.text();
+  mdCache.set(path, text);
+  return text;
+}
+
+async function openNote(key, { nav = null } = {}) {
+  const note = NOTES[key];
+  if (!note || key === currentKey) return;
+
+  if (currentKey) {
+    scrollMemory.set(currentKey, readerPane.scrollTop);
+    if (nav === 'back') {
+      forwardStack.push(currentKey);
+    } else if (nav === 'forward') {
+      historyStack.push(currentKey);
+    } else {
+      historyStack.push(currentKey);
+      forwardStack.length = 0;
+    }
+  }
+  currentKey = key;
+
+  history.replaceState(null, '', '#' + key);
+  markActive(key);
+  readerTitle.textContent = note.title;
+  updateNavButtons();
+  readerContent.innerHTML = '<div class="reader-placeholder">Učitavanje…</div>';
+
+  let markdown;
+  try {
+    markdown = await fetchNote(note.path);
+  } catch {
+    if (currentKey !== key) return;
+    readerContent.innerHTML = '<div class="reader-error">Nije moguće učitati belešku.<br>Proverite internet vezu.</div>';
+    return;
+  }
+  if (currentKey !== key) return;
+
+  readerContent.innerHTML = marked.parse(markdown);
+  const noteDir = RAW_BASE + note.path.slice(0, note.path.lastIndexOf('/') + 1);
+  readerContent.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src');
+    if (src && !/^(https?:)?\/\//.test(src) && !src.startsWith('data:')) {
+      img.src = new URL(src, noteDir).href;
+    }
+  });
+  readerContent.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    if (/^(https?:)?\/\//.test(href) || href.startsWith('mailto:')) {
+      a.target = '_blank';
+      return;
+    }
+    if (href.startsWith('#')) return;
+    const resolved = new URL(href, noteDir);
+    const hash = decodeURIComponent(resolved.hash.slice(1));
+    resolved.hash = '';
+    if (!resolved.href.startsWith(RAW_BASE) || !resolved.pathname.endsWith('.md')) {
+      a.href = resolved.href.replace(RAW_BASE, BLOB_BASE);
+      a.target = '_blank';
+      return;
+    }
+    const linkedKey = noteKeyFor(decodeURIComponent(resolved.href.slice(RAW_BASE.length)), hash, a.textContent);
+    a.href = '#' + linkedKey;
+    a.addEventListener('click', event => {
+      event.preventDefault();
+      openNote(linkedKey);
+    });
+  });
+  readerContent.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+  readerContent.querySelectorAll('h1, h2, h3').forEach(h => { h.id = slugify(h.textContent); });
+
+  if (scrollMemory.has(key)) {
+    readerPane.scrollTop = scrollMemory.get(key);
+  } else if (note.section) {
+    const target = document.getElementById(note.section);
+    readerPane.scrollTop = target ? target.offsetTop - 12 : 0;
+  } else {
+    readerPane.scrollTop = 0;
+  }
+}
+
+document.querySelectorAll('[data-note]').forEach(el => {
+  if (NOTES[el.dataset.note]) {
+    el.classList.add('node');
+    el.addEventListener('click', () => openNote(el.dataset.note));
+  }
+});
+
+backBtn.addEventListener('click', () => {
+  const prev = historyStack.pop();
+  if (prev) openNote(prev, { nav: 'back' });
+});
+
+fwdBtn.addEventListener('click', () => {
+  const next = forwardStack.pop();
+  if (next) openNote(next, { nav: 'forward' });
+});
+
+const initial = decodeURIComponent(location.hash.slice(1));
+if (NOTES[initial]) {
+  openNote(initial);
+} else if (initial.includes('.md')) {
+  const [path, section] = initial.split('#');
+  openNote(noteKeyFor(path, section, ''));
+}
+</script>
+</body>
+</html>
